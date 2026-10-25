@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>製作折線圖 - 香港小學數學</title>
+  <!-- 引入 html2canvas 程式庫以支援報告圖片下載 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* 全局樣式與 iPad 觸控優化 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #2b5278;
+      --primary-hover: #1f3d5c;
+      --accent-a: #e76f51;
+      --accent-b: #2a9d8f;
+      --bg: #f0f4f8;
+      --card-bg: #ffffff;
+      --text: #2d3748;
+      --success: #38a169;
+      --error: #e53e3e;
+      --warning: #d69e2e;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      touch-action: manipulation;
+    }
+
+    /* 頂部導覽列 */
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .lang-btn {
+      background-color: transparent;
+      border: 1px solid white;
+      color: white;
+      padding: 8px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+      min-height: 44px;
+    }
+
+    .lang-btn:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      text-align: center;
+      font-size: 1.8rem;
+      color: var(--primary);
+      margin-bottom: 25px;
+      font-weight: bold;
+    }
+
+    /* 首頁選單網格 */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 2px solid transparent;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .card:hover, .card:active {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      border-color: #4a90e2;
+    }
+
+    .card h3 {
+      font-size: 1.4rem;
+      color: #1a365d;
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* 練習與題解區域 */
+    .quiz-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .back-nav-btn {
+      background: white;
+      border: 1px solid #cbd5e0;
+      color: #4a5568;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+      min-height: 44px;
+    }
+
+    .back-nav-btn:hover {
+      background-color: #edf2f7;
+      color: #2b6cb0;
+    }
+
+    .quiz-card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #edf2f7;
+      padding-bottom: 12px;
+    }
+
+    .quiz-progress {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #3182ce;
+    }
+
+    .unit-tag {
+      background-color: #ebf8ff;
+      color: #2b6cb0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      font-weight: bold;
+    }
+
+    /* 四捨五入表格樣式 */
+    .round-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0 20px 0;
+      background: #fff;
+    }
+
+    .round-table th, .round-table td {
+      border: 1px solid #cbd5e0;
+      padding: 10px 6px;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    .round-table th {
+      background-color: #fef3bd;
+      font-weight: bold;
+      color: #2d3748;
+    }
+
+    .round-table td.header-cell {
+      background-color: #fef3bd;
+      font-weight: bold;
+      color: #2d3748;
+    }
+
+    .round-input {
+      width: 95%;
+      max-width: 110px;
+      padding: 8px;
+      border: 2px solid #cbd5e0;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .round-input:focus {
+      border-color: #3182ce;
+    }
+
+    .round-input.correct {
+      border-color: var(--success);
+      background-color: #e6fffa;
+      color: #22543d;
+      font-weight: bold;
+    }
+
+    .round-input.wrong {
+      border-color: var(--error);
+      background-color: #fff5f5;
+      color: #9b2c2c;
+      font-weight: bold;
+    }
+
+    /* 折線圖專用樣式 */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+
+    .data-table th, .data-table td {
+      border: 1px solid #cbd5e0;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    .data-table th {
+      background-color: #fef5d1;
+      color: #333;
+      font-weight: bold;
+    }
+
+    .color-selector {
+      display: flex;
+      gap: 1rem;
+      margin: 15px 0;
+      justify-content: center;
+    }
+
+    .color-btn {
+      padding: 8px 16px;
+      border: 2px solid #cbd5e0;
+      border-radius: 20px;
+      background: white;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      min-height: 44px;
+    }
+
+    .color-btn.active {
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transform: scale(1.05);
+      background-color: #ebf8ff;
+    }
+
+    .color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .chart-container {
+      background: white;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      margin: 15px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: auto;
+    }
+
+    svg {
+      background: #fff;
+      user-select: none;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .grid-node {
+      fill: transparent;
+      cursor: pointer;
+    }
+    
+    .grid-node:hover {
+      fill: rgba(231, 111, 81, 0.3);
+    }
+
+    /* 按鈕樣式 */
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      text-align: center;
+      min-height: 48px;
+    }
+
+    .btn:active {
+      transform: scale(0.99);
+    }
+
+    .btn-primary { background-color: #3182ce; color: white; }
+    .btn-primary:hover { background-color: #2b6cb0; }
+
+    .btn-success { background-color: #38a169; color: white; }
+    .btn-success:hover { background-color: #2f855a; }
+
+    .btn-purple { background-color: #8e44ad; color: white; margin-bottom: 10px; }
+    .btn-purple:hover { background-color: #7d3c98; }
+
+    .btn-sky { background-color: #38bdf8; color: white; margin-bottom: 10px; }
+    .btn-sky:hover { background-color: #0284c7; }
+
+    .btn-gray { background-color: #7f8c8d; color: white; }
+    .btn-gray:hover { background-color: #636e72; }
+
+    /* 反饋與提示訊息 */
+    .feedback-box {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 10px;
+      text-align: left;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .feedback-success {
+      background-color: #c6f6d5;
+      color: #22543d;
+      border: 1px solid #9ae6b4;
+    }
+
+    .feedback-warning {
+      background-color: #feebc8;
+      color: #744210;
+      border: 1px solid #fbd38d;
+    }
+
+    .feedback-danger {
+      background-color: #fff5f5;
+      color: #742a2a;
+      border: 1px solid #feb2b2;
+    }
+
+    /* 分析報告界面 */
+    .report-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      max-width: 650px;
+      margin: 0 auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .report-title {
+      text-align: center;
+      color: #3182ce;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .report-section {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin-bottom: 15px;
+    }
+
+    .report-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      color: #4a5568;
+      font-size: 0.95rem;
+    }
+
+    .report-row.dashed {
+      border-bottom: 1px dashed #cbd5e0;
+    }
+
+    .report-val { font-weight: bold; }
+    .val-green { color: #276749; }
+    .val-red { color: #9b2c2c; }
+    .val-blue { color: #0284c7; }
+
+    .section-label {
+      font-weight: bold;
+      color: #2d3748;
+      margin: 15px 0 10px 0;
+      font-size: 1rem;
+    }
+
+    .list-box {
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .list-box.correct-bg { background-color: #f7fafc; }
+    .list-box.wrong-bg { background-color: #f7fafc; }
+
+    .list-title {
+      font-weight: bold;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .item-card-correct {
+      background: #f0fff4;
+      border: 1px solid #c6f6d5;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      color: #22543d;
+      font-weight: 500;
+    }
+
+    .item-card-wrong {
+      background: #fff5f5;
+      border: 1px solid #fed7d7;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      color: #9b2c2c;
+      font-weight: 500;
+    }
+
+    /* Modal 彈窗 */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-box h3 { margin-bottom: 12px; color: #2b5278; }
+    .modal-box p { margin-bottom: 20px; color: #4a5568; line-height: 1.5; }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .quiz-card { padding: 20px 15px; }
+      .round-table th, .round-table td { padding: 6px 3px; font-size: 0.85rem; }
+      .round-input { max-width: 80px; padding: 5px; font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部導覽列 -->
+  <header>
+    <h1 id="header-title" onclick="askReturnHome()">製作折線圖</h1>
+    <button id="lang-toggle-btn" class="lang-btn" onclick="toggleLanguage()">English</button>
+  </header>
+
+  <main>
+    <div class="container">
+
+      <!-- 1. 首頁選擇界面 -->
+      <div id="page-home">
+        <h2 id="home-subtitle" class="page-title">請選擇學習單元</h2>
+        <div class="menu-grid">
+          <div class="card" onclick="startQuiz('rounding')">
+            <h3 id="unit1-title">四捨五入練習</h3>
+            <p id="desc-unit1">根據表格中的數據，將數值四捨五入取至指定位數（千位、萬位、十萬位等）並完成表格。</p>
+          </div>
+          <div class="card" onclick="startQuiz('line_graph')">
+            <h3 id="unit2-title">製作折線圖</h3>
+            <p id="desc-unit2">複合折線圖：提供 2 組數據，需切換顏色分別標記數據點，描繪精確的雙折線圖。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 答題界面 -->
+      <div id="page-quiz" class="hidden">
+        <div class="quiz-wrapper">
+          <button class="back-nav-btn" onclick="askReturnHome()">
+            <span id="lbl-back-btn">← 返回單元選擇</span>
+          </button>
+
+          <div class="quiz-card">
+            <div class="quiz-header">
+              <span id="quiz-mode-name" class="unit-tag">四捨五入練習</span>
+              <span id="quiz-progress-text" class="quiz-progress">題目 1 / 10</span>
+            </div>
+
+            <!-- 單元一：四捨五入 DOM -->
+            <div id="rounding-area" class="hidden">
+              <p id="round-intro" style="font-size: 1.05rem; font-weight: 500; color: #2d3748; margin-bottom: 8px;">載入中...</p>
+              <p id="round-q-text" style="font-size: 1.05rem; font-weight: bold; color: #2b5278; margin-bottom: 12px;">
+                ❶ 請將數值四捨五入並完成下表。
+              </p>
+
+              <div style="overflow-x: auto;">
+                <table class="round-table">
+                  <thead>
+                    <tr>
+                      <th id="r-th-day" style="width: 26%;">類別</th>
+                      <th id="r-th-c0">-</th>
+                      <th id="r-th-c1">-</th>
+                      <th id="r-th-c2">-</th>
+                      <th id="r-th-c3">-</th>
+                      <th id="r-th-c4">-</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="header-cell" id="r-row1-label">-</td>
+                      <td id="r-val-a0">-</td>
+                      <td id="r-val-a1">-</td>
+                      <td id="r-val-a2">-</td>
+                      <td id="r-val-a3">-</td>
+                      <td id="r-val-a4">-</td>
+                    </tr>
+                    <tr>
+                      <td class="header-cell" id="r-row1-round-label">-</td>
+                      <td><input type="text" class="round-input" id="r-input-a0" autocomplete="off" inputmode="numeric"></td>
+                      <td><input type="text" class="round-input" id="r-input-a1" autocomplete="off" inputmode="numeric"></td>
+                      <td><input type="text" class="round-input" id="r-input-a2" autocomplete="off" inputmode="numeric"></td>
+                      <td><input type="text" class="round-input" id="r-input-a3" autocomplete="off" inputmode="numeric"></td>
+                      <td><input type="text" class="round-input" id="r-input-a4" autocomplete="off" inputmode="numeric"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 單元二：製作折線圖 DOM -->
+            <div id="linegraph-area" class="hidden">
+              <h3 id="create-title" style="font-size:1.15rem; color:#2b5278; margin-bottom: 10px;">題目載入中...</h3>
+              <div style="overflow-x: auto;">
+                <table class="data-table" id="create-data-table">
+                  <thead>
+                    <tr id="table-header-row">
+                      <th id="th-col-header">類別</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body"></tbody>
+                </table>
+              </div>
+              <p id="create-instruction" style="font-size:0.9rem; color:#666; margin-bottom:10px;">
+                提示：切換下方顏色按鈕，分別標記「數據 A」與「數據 B」兩組折線數據點。再次點擊點可取消。
+              </p>
+
+              <div class="color-selector">
+                <button class="color-btn active" id="btn-color-a" onclick="selectActiveSeries('A')">
+                  <span class="color-dot" style="background-color: var(--accent-a);"></span>
+                  <span id="label-series-a">數據 A</span>
+                </button>
+                <button class="color-btn" id="btn-color-b" onclick="selectActiveSeries('B')">
+                  <span class="color-dot" style="background-color: var(--accent-b);"></span>
+                  <span id="label-series-b">數據 B</span>
+                </button>
+              </div>
+
+              <div class="chart-container">
+                <svg id="create-chart" width="500" height="360"></svg>
+              </div>
+            </div>
+
+            <div id="action-area" style="margin-top: 15px;">
+              <button id="btn-submit" class="btn btn-primary" onclick="checkAnswer()">提交答案</button>
+              <button id="btn-next" class="btn btn-success hidden" onclick="nextQuestion()">下一題 ➔</button>
+            </div>
+
+            <div id="feedback-area" class="hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 表現分析報告 -->
+      <div id="page-report" class="hidden">
+        <div id="report-card-to-capture" class="report-card">
+          <h2 id="report-main-title" class="report-title">練習完成！表現分析報告</h2>
+
+          <div class="report-section">
+            <div class="report-row dashed">
+              <span id="lbl-start-time">開始時間：</span>
+              <span id="val-start-time" class="report-val">--</span>
+            </div>
+            <div class="report-row dashed">
+              <span id="lbl-end-time">完成時間：</span>
+              <span id="val-end-time" class="report-val">--</span>
+            </div>
+            <div class="report-row">
+              <span id="lbl-duration">總用時：</span>
+              <span id="val-duration" class="report-val val-blue">--</span>
+            </div>
+          </div>
+
+          <div class="report-section">
+            <div class="report-row dashed">
+              <span id="lbl-total-correct">總答對題數：</span>
+              <span id="val-correct-count" class="report-val val-green">0 / 10</span>
+            </div>
+            <div class="report-row">
+              <span id="lbl-accuracy">整體正確率：</span>
+              <span id="val-accuracy" class="report-val">0%</span>
+            </div>
+          </div>
+
+          <div class="section-label" id="lbl-mastery-title">各主題掌握度分析</div>
+          <div class="report-section">
+            <div class="report-row">
+              <span id="report-unit-name">1. 四捨五入練習</span>
+              <span id="val-unit-mastery" class="report-val">0 / 10 (0%)</span>
+            </div>
+          </div>
+
+          <div class="list-box correct-bg">
+            <div class="list-title val-green">
+              <span>☑</span> <span id="lbl-correct-title">答對的題目</span>
+            </div>
+            <div id="correct-list-container"></div>
+          </div>
+
+          <div class="list-box wrong-bg">
+            <div class="list-title val-red">
+              <span>✕</span> <span id="lbl-wrong-title">答錯 / 需要協助的題目</span>
+            </div>
+            <div id="wrong-list-container"></div>
+          </div>
+
+          <div data-html2canvas-ignore="true" style="margin-top: 20px;">
+            <button class="btn btn-purple" onclick="downloadReportImage()"><span id="lbl-btn-download">💾 下載報告圖片</span></button>
+            <button class="btn btn-sky" onclick="retryPractice()"><span id="lbl-btn-retry">🔄 我想再試</span></button>
+            <button class="btn btn-gray" onclick="goHome()"><span id="lbl-btn-home">回到主頁重新選擇</span></button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 通用 Modal -->
+  <div id="custom-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 id="modal-title">標題</h3>
+      <p id="modal-msg">內容訊息</p>
+      <div class="modal-buttons">
+        <button id="modal-cancel-btn" class="btn btn-gray" style="flex: 1;" onclick="closeModal()">取消</button>
+        <button id="modal-confirm-btn" class="btn btn-primary" style="flex: 1;" onclick="confirmModalAction()">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 完整多語言字典
+    const i18n = {
+      zh: {
+        headerTitle: "製作折線圖",
+        langBtn: "English",
+        homeSubtitle: "請選擇學習單元",
+        unit1Title: "四捨五入練習",
+        descUnit1: "根據表格中的數據，將數值四捨五入取至指定位數（百位、千位、萬位、十萬位、百萬位）並完成表格。",
+        unit2Title: "製作折線圖",
+        descUnit2: "複合折線圖：提供 2 組數據，需切換顏色分別標記數據點，描繪精確的雙折線圖。",
+        qProgress: "題目",
+        questionLabel: "第 {n} 題",
+        submitBtn: "提交答案",
+        nextBtn: "下一題 ➔",
+        checkBtn: "檢查折線圖",
+        praise: ["太棒了！完全正確！🌟", "非常優秀，計算得很精確！👏", "答對了！繼續保持！🎉", "真聰明！完全掌握了技巧！💪"],
+        roundSuccessTitle: "太棒了！全對！",
+        roundSuccessMsg: "🎉 <b>讚賞：</b><br>你已精準掌握四捨五入法！下一位滿 5 向上進位 (+1)，不滿 5 則捨去 (0)。",
+        roundIncompleteMsg: "⚠️ <b>提醒：</b>請將表格中所有 5 個格子都填入數值後再提交答案喔！",
+        roundWrongHintHeader: "💡 <b>解題提示：</b><br>部分答案不正確喔！請重新檢查標記紅色的格子。<br><b>提示：</b>觀察目標位數的「右邊下一位數字」：<br>• 若是 5、6、7、8、9，則向上進位 (+1)<br>• 若是 0、1、2、3、4，則捨去改為 0<br>請再試一次！",
+      roundWrongHeader: "💡 <b>解題思路與修正提示：</b><br>進行四捨五入時，請觀察目標位數的「下一位」數字：若為 5, 6, 7, 8, 9 則進位 (+1)；若為 0, 1, 2, 3, 4 則捨去。<br><br>",
+      createSuccessTitle: "太厲害了！完全正確！",
+      createSuccessMsg: "🎉 <b>讚賞：</b><br>你非常精準地標記了所有數據點並繪製了複合折線圖！",
+      createIncompleteAdvMsg: "💡 <b>解題思路：</b><br>兩組數據均需完整標記喔！請切換顏色按鈕，檢查兩條折線是否都標記完成（每組 6 個點）。",
+      createWrongHeader: "💡 <b>解題思路與修正提示：</b><br>請檢查以下標記有誤的項目：<br>",
+      roundDetailTemplate: "• <b>{col}</b>：原數 {orig} ➔ 正確答案為 <b>{ans}</b><br>",
+      createDetailTemplate: "• [{series}] Pt {pt} ({label}): marked as {marked}, should be <b>{correct}</b><br>",
+      reportTitle: "練習完成！表現分析報告",
+      startTime: "開始時間：",
+      endTime: "完成時間：",
+      durationTime: "總用時：",
+      totalCorrect: "總答對題數：",
+      accuracy: "整體正確率：",
+      masteryTitle: "各主題掌握度分析",
+      correctTitle: "答對的題目",
+      wrongTitle: "答錯 / 需要協助的題目",
+      noWrong: "太厲害了！沒有答錯的題目！",
+      noCorrect: "無答對題目",
+      btnDownload: "💾 下載報告圖片",
+      btnRetry: "🔄 我想再試",
+      btnHome: "回到主頁重新選擇",
+      modalReturnTitle: "返回單元選擇",
+      modalReturnMsg: "確定要返回主選單嗎？目前的答題進度將不會被保存。",
+      labelSeriesA: "數據 A",
+      labelSeriesB: "數據 B",
+      correctAllGraph: "All points correctly plotted"
+    },
+    en: {
+      headerTitle: "Plotting Line Graphs",
+      langBtn: "繁體中文",
+      homeSubtitle: "Please Select a Learning Unit",
+      unit1Title: "Rounding Off Practice",
+      descUnit1: "Round off numbers in the table to the specified place value (hundreds, thousands, ten thousands, hundred thousands, millions).",
+      unit2Title: "Plotting Line Graphs",
+      descUnit2: "Compound Line Graph: Plot two data sets by switching color buttons to draw double line graphs.",
+      qProgress: "Question",
+      questionLabel: "Q{n}",
+      backBtn: "← Back to Unit Selection",
+      submitBtn: "Submit Answer",
+      nextBtn: "Next Question ➔",
+      checkBtn: "Check Graph",
+      praise: ["Awesome! All correct! 🌟", "Excellent work! Very precise! 👏", "Correct! Keep it up! 🎉", "Great job! You mastered the skill! 💪"],
+      roundSuccessTitle: "Awesome! All Correct!",
+      roundSuccessMsg: "🎉 <b>Praise:</b><br>You mastered rounding off! Round up if the next digit is 5 or more, otherwise round down.",
+      roundIncompleteMsg: "⚠️ <b>Reminder:</b> Please fill in all 5 fields in the table before submitting!",
+      roundWrongHintHeader: "💡 <b>Hint:</b><br>Some answers are incorrect! Please re-check the highlighted fields.<br><b>Rule:</b> Look at the digit immediately to the right:<br>• If 5, 6, 7, 8, or 9: round up (+1)<br>• If 0, 1, 2, 3, or 4: round down (keep and zero out)<br>Please try again!",
+      roundWrongHeader: "💡 <b>Strategy & Hints:</b><br>Check the digit immediately to the right of the target place value: if 5-9, round up (+1); if 0-4, round down.<br><br>",
+      createSuccessTitle: "Awesome! Perfectly Done!",
+      createSuccessMsg: "🎉 <b>Praise:</b><br>You accurately plotted all data points for both lines!",
+      createIncompleteAdvMsg: "💡 <b>Strategy:</b><br>Both data sets must be completely plotted! Switch colors to check if all 6 points on both lines are plotted.",
+      createWrongHeader: "💡 <b>Strategy & Hints:</b><br>Please re-check the following incorrect points:<br>",
+      roundDetailTemplate: "• <b>{col}</b>: original number {orig} ➔ Correct answer is <b>{ans}</b><br>",
+      createDetailTemplate: "• [{series}] Pt {pt} ({label}): marked as {marked}, should be <b>{correct}</b><br>",
+      reportTitle: "Practice Completed! Performance Report",
+      startTime: "Start Time:",
+      endTime: "Completion Time:",
+      durationTime: "Time Taken:",
+      totalCorrect: "Total Correct:",
+      accuracy: "Overall Accuracy:",
+      masteryTitle: "Topic Mastery Analysis",
+      correctTitle: "Correct Questions",
+      wrongTitle: "Incorrect / Needs Assistance",
+      noWrong: "Amazing! No incorrect answers!",
+      noCorrect: "No correct questions",
+      btnDownload: "💾 Download Report Image",
+      btnRetry: "🔄 Try Again",
+      btnHome: "Back to Home",
+      modalReturnTitle: "Return to Unit Selection",
+      modalReturnMsg: "Are you sure you want to return to home? Current progress will be lost.",
+      labelSeriesA: "Series A",
+      labelSeriesB: "Series B",
+      correctAllGraph: "All points correctly plotted"
+    }
+  };
+
+    // ------------------ 單元一：四捨五入 題庫（按位數分類與隨機生成） ------------------
+    const roundingThemes = [
+      {
+        introZh: "下表顯示學校五個年級參加體育活動的人次。", introEn: "Sports activity participation counts.",
+        colHeaderZh: "年級", colHeaderEn: "Grade", colsZh: ["小一", "小二", "小三", "小四", "小五"], colsEn: ["P1", "P2", "P3", "P4", "P5"],
+        row1Zh: "學生參加人次", row1En: "Participants"
+      },
+      {
+        introZh: "下表顯示五個社區回收站收集到的廢紙重量 (kg)。", introEn: "Recycled paper weight (kg).",
+        colHeaderZh: "回收站", colHeaderEn: "Station", colsZh: ["甲站", "乙站", "丙站", "丁站", "戊站"], colsEn: ["A", "B", "C", "D", "E"],
+        row1Zh: "廢紙回收量 (kg)", row1En: "Paper (kg)"
+      },
+      {
+        introZh: "下表顯示過去五天進入城市 A 的旅客人數。", introEn: "Visitor arrivals to City A in the past five days.",
+        colHeaderZh: "星期", colHeaderEn: "Day", colsZh: ["星期一", "星期二", "星期三", "星期四", "星期五"], colsEn: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        row1Zh: "旅客人數", row1En: "Visitors"
+      },
+      {
+        introZh: "下表顯示某圖書館在五個月內的圖書借閱總量。", introEn: "Library book borrowing counts over 5 months.",
+        colHeaderZh: "月份", colHeaderEn: "Month", colsZh: ["一月", "二月", "三月", "四月", "五月"], colsEn: ["Jan", "Feb", "Mar", "Apr", "May"],
+        row1Zh: "書籍借閱量", row1En: "Book borrowings"
+      },
+      {
+        introZh: "下表顯示某大型主題樂園在五個月份的入場人次。", introEn: "Theme park visitors over 5 months.",
+        colHeaderZh: "月份", colHeaderEn: "Month", colsZh: ["五月", "六月", "七月", "八月", "九月"], colsEn: ["May", "Jun", "Jul", "Aug", "Sep"],
+        row1Zh: "遊客人數", row1En: "Visitors"
+      },
+      {
+        introZh: "下表顯示某連鎖超市五個分店的月營業額。", introEn: "Monthly revenue for 5 supermarket branches.",
+        colHeaderZh: "分店", colHeaderEn: "Branch", colsZh: ["中環", "灣仔", "旺角", "沙田", "屯門"], colsEn: ["Central", "Wan Chai", "Mong Kok", "Shatin", "Tuen Mun"],
+        row1Zh: "營業額 ($)", row1En: "Revenue ($)"
+      },
+      {
+        introZh: "下表顯示公司 A 在近五年供應的餐盒數量。", introEn: "Meal sets supplied by Company A over 5 years.",
+        colHeaderZh: "年份", colHeaderEn: "Year", colsZh: ["2020", "2021", "2022", "2023", "2024"], colsEn: ["2020", "2021", "2022", "2023", "2024"],
+        row1Zh: "供應餐盒數量", row1En: "Meal sets"
+      },
+      {
+        introZh: "下表顯示城市 A 在過去五年的總人口數。", introEn: "Total population of City A over 5 years.",
+        colHeaderZh: "年份", colHeaderEn: "Year", colsZh: ["2020", "2021", "2022", "2023", "2024"], colsEn: ["2020", "2021", "2022", "2023", "2024"],
+        row1Zh: "人口數", row1En: "Population"
+      }
+    ];
+
+    const roundUnitLabels = {
+      100: { roundZh: "取至最接近的百位", roundEn: "Nearest hundred" },
+      1000: { roundZh: "取至最接近的千位", roundEn: "Nearest thousand" },
+      10000: { roundZh: "取至最接近的萬位", roundEn: "Nearest ten thousand" },
+      100000: { roundZh: "取至最接近的十萬位", roundEn: "Nearest hundred thousand" },
+      1000000: { roundZh: "取至最接近的百萬位", roundEn: "Nearest million" }
+    };
+
+    // 隨機產生指定範圍與四捨五入目標位數相關的數值
+    function generateRandomNumbersForUnit(unit) {
+      const data = [];
+      const baseMin = unit * 2;
+      const baseMax = unit * 80;
+      for (let i = 0; i < 5; i++) {
+        // 隨機數值且避免整數剛好為目標位數倍數，讓學生實際計算四捨五入
+        let base = Math.floor(Math.random() * (baseMax - baseMin)) + baseMin;
+        let offset = Math.floor(Math.random() * (unit * 0.9)) - Math.floor(unit * 0.45);
+        let val = Math.max(unit + 15, base + offset);
+        data.push(val);
+      }
+      return data;
+    }
+
+    // ------------------ 單元二：製作折線圖 題庫模板 ------------------
+    const lineGraphTemplates = [
+      {
+        titleZh: "題目：請繪製小明與小紅每週閱讀書本數量折線圖", titleEn: "Task: Plot Reading Books for Ming and Mary",
+        colHeaderZh: "週數", colHeaderEn: "Week", valHeaderZh: "數量 (本)", valHeaderEn: "Books",
+        rowAZh: "小明", rowAEn: "Ming", rowBZh: "小紅", rowBEn: "Mary",
+        labelsZh: ["第1週", "第2週", "第3週", "第4週", "第5週", "第6週"], labelsEn: ["Wk 1", "Wk 2", "Wk 3", "Wk 4", "Wk 5", "Wk 6"]
+      },
+      {
+        titleZh: "題目：請繪製美美與強強一週步數紀錄折線圖", titleEn: "Task: Plot Daily Steps for May and John",
+        colHeaderZh: "星期", colHeaderEn: "Day", valHeaderZh: "步數 (千步)", valHeaderEn: "Steps (Thousands)",
+        rowAZh: "美美", rowAEn: "May", rowBZh: "強強", rowBEn: "John",
+        labelsZh: ["週一", "週二", "週三", "週四", "週五", "週六"], labelsEn: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+      },
+      {
+        titleZh: "題目：請繪製陳先生近兩年下半年營業額折線圖", titleEn: "Task: Plot Mr. Chan's Revenue (2024 vs 2025)",
+        colHeaderZh: "月份", colHeaderEn: "Month", valHeaderZh: "營業額 (萬元)", valHeaderEn: "Revenue ($10k)",
+        rowAZh: "2024年", rowAEn: "2024", rowBZh: "2025年", rowBEn: "2025",
+        labelsZh: ["7月", "8月", "9月", "10月", "11月", "12月"], labelsEn: ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      }
+    ];
+
+    // 狀態變數
+    let currentLang = 'zh';
+    let currentMode = '';
+    let questions = [];
+    let currentQIndex = 0;
+    let records = [];
+    let startTimeObj = null;
+    let modalActionCallback = null;
+
+    // 折線圖特有狀態
+    let activeSeries = 'A';
+    let targetDataA = [];
+    let targetDataB = [];
+    let userPointsA = {};
+    let userPointsB = {};
+    let currentGraphMeta = null;
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      const t = i18n[currentLang];
+
+      document.getElementById('header-title').innerText = t.headerTitle;
+      document.getElementById('lang-toggle-btn').innerText = t.langBtn;
+      document.getElementById('home-subtitle').innerText = t.homeSubtitle;
+      document.getElementById('unit1-title').innerText = t.unit1Title;
+      document.getElementById('desc-unit1').innerText = t.descUnit1;
+      document.getElementById('unit2-title').innerText = t.unit2Title;
+      document.getElementById('desc-unit2').innerText = t.descUnit2;
+      document.getElementById('lbl-back-btn').innerText = t.backBtn;
+
+      if (!document.getElementById('page-quiz').classList.contains('hidden')) {
+        loadQuestion();
+      }
+    }
+
+    function mathRoundCustom(val, unit) {
+      return Math.round(val / unit) * unit;
+    }
+
+    function generateQuestions(mode, count = 5) {
+      const qList = [];
+      if (mode === 'rounding') {
+        const units = [100, 1000, 10000, 100000, 1000000];
+        const shuffledUnits = [...units].sort(() => Math.random() - 0.5);
+
+        // 隨機打亂主題陣列
+        const shuffledThemes = [...roundingThemes].sort(() => Math.random() - 0.5);
+
+        shuffledUnits.forEach((unit, idx) => {
+          const theme = shuffledThemes[idx % shuffledThemes.length];
+          const unitMeta = roundUnitLabels[unit];
+          
+          // 動態隨機生成數值
+          const randomData = generateRandomNumbersForUnit(unit);
+          const ansA = randomData.map(v => mathRoundCustom(v, unit));
+
+          const preset = {
+            introZh: theme.introZh,
+            introEn: theme.introEn,
+            colHeaderZh: theme.colHeaderZh,
+            colHeaderEn: theme.colHeaderEn,
+            colsZh: theme.colsZh,
+            colsEn: theme.colsEn,
+            row1Zh: theme.row1Zh,
+            row1En: theme.row1En,
+            row1RoundZh: unitMeta.roundZh,
+            row1RoundEn: unitMeta.roundEn,
+            dataA: randomData
+          };
+
+          qList.push({
+            type: 'rounding',
+            roundUnit: unit,
+            preset: preset,
+            ansA: ansA
+          });
+        });
+      } else {
+        // 單元二：每次固定產生 3 題，每一小格刻度分別代表 1, 2, 5，並隨機打亂出現順序
+        const intervalSteps = [1, 2, 5].sort(() => Math.random() - 0.5);
+        
+        // 隨機打亂模板順序，確保每次模板與刻度的組合都不相同
+        const shuffledTemplates = [...lineGraphTemplates].sort(() => Math.random() - 0.5);
+
+        for (let i = 0; i < 3; i++) {
+          const tpl = shuffledTemplates[i % shuffledTemplates.length];
+          const stepVal = intervalSteps[i];
+          
+          let dA = [], dB = [];
+          for (let k = 0; k < 6; k++) {
+            // 生成隨機數據 (每個數據點都是 stepVal 的隨機倍數)
+            dA.push(Math.floor(Math.random() * 8 + 1) * stepVal);
+            dB.push(Math.floor(Math.random() * 8 + 1) * stepVal);
+          }
+          
+          const maxVal = Math.max(...dA, ...dB);
+          let yMax = Math.ceil(maxVal / (stepVal * 5)) * (stepVal * 5);
+          if (yMax < stepVal * 5) yMax = stepVal * 5;
+
+          qList.push({
+            type: 'line_graph',
+            template: tpl,
+            stepVal: stepVal,
+            yMax: yMax,
+            dataA: dA,
+            dataB: dB
+          });
+        }
+      }
+      return qList;
+    }
+
+    function startQuiz(mode) {
+      currentMode = mode;
+      const qCount = (mode === 'rounding') ? 5 : 3;
+      questions = generateQuestions(mode, qCount);
+      currentQIndex = 0;
+      records = [];
+      startTimeObj = new Date();
+
+      document.getElementById('page-home').classList.add('hidden');
+      document.getElementById('page-report').classList.add('hidden');
+      document.getElementById('page-quiz').classList.remove('hidden');
+      document.getElementById('lang-toggle-btn').classList.add('hidden');
+
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const t = i18n[currentLang];
+      const q = questions[currentQIndex];
+
+      document.getElementById('quiz-mode-name').innerText = (currentMode === 'rounding') ? t.unit1Title : t.unit2Title;
+      document.getElementById('quiz-progress-text').innerText = `${t.qProgress} ${currentQIndex + 1} / ${questions.length}`;
+
+      document.getElementById('feedback-area').classList.add('hidden');
+      document.getElementById('feedback-area').innerHTML = '';
+      document.getElementById('btn-submit').classList.remove('hidden');
+      document.getElementById('btn-next').classList.add('hidden');
+      document.getElementById('btn-submit').innerText = (currentMode === 'rounding') ? t.submitBtn : t.checkBtn;
+
+      if (currentMode === 'rounding') {
+        document.getElementById('rounding-area').classList.remove('hidden');
+        document.getElementById('linegraph-area').classList.add('hidden');
+        setupRoundingUI(q);
+      } else {
+        document.getElementById('rounding-area').classList.add('hidden');
+        document.getElementById('linegraph-area').classList.remove('hidden');
+        setupLineGraphUI(q);
+      }
+    }
+
+    // --- 四捨五入邏輯 ---
+    function setupRoundingUI(q) {
+      const p = q.preset;
+      const isZh = (currentLang === 'zh');
+
+      document.getElementById('round-intro').innerText = isZh ? p.introZh : p.introEn;
+      document.getElementById('r-th-day').innerText = isZh ? p.colHeaderZh : p.colHeaderEn;
+
+      const cols = isZh ? p.colsZh : p.colsEn;
+      for (let i = 0; i < 5; i++) {
+        document.getElementById(`r-th-c${i}`).innerText = cols[i];
+      }
+
+      document.getElementById('r-row1-label').innerText = isZh ? p.row1Zh : p.row1En;
+      document.getElementById('r-row1-round-label').innerText = isZh ? p.row1RoundZh : p.row1RoundEn;
+
+      for (let i = 0; i < 5; i++) {
+        document.getElementById(`r-val-a${i}`).innerText = p.dataA[i].toLocaleString();
+
+        const inputA = document.getElementById(`r-input-a${i}`);
+        inputA.value = '';
+        inputA.className = 'round-input';
+        inputA.disabled = false;
+      }
+    }
+
+    // --- 折線圖邏輯 ---
+    function selectActiveSeries(series) {
+      activeSeries = series;
+      if (series === 'A') {
+        document.getElementById('btn-color-a').classList.add('active');
+        document.getElementById('btn-color-b').classList.remove('active');
+      } else {
+        document.getElementById('btn-color-b').classList.add('active');
+        document.getElementById('btn-color-a').classList.remove('active');
+      }
+    }
+
+    function setupLineGraphUI(q) {
+      const isZh = (currentLang === 'zh');
+      const tpl = q.template;
+
+      document.getElementById('create-title').innerText = isZh ? tpl.titleZh : tpl.titleEn;
+      document.getElementById('th-col-header').innerText = isZh ? tpl.colHeaderZh : tpl.colHeaderEn;
+      document.getElementById('label-series-a').innerText = isZh ? tpl.rowAZh : tpl.rowAEn;
+      document.getElementById('label-series-b').innerText = isZh ? tpl.rowBZh : tpl.rowBEn;
+
+      const labels = isZh ? tpl.labelsZh : tpl.labelsEn;
+      const tbody = document.getElementById('table-body');
+      
+      const headerRow = document.getElementById('table-header-row');
+      headerRow.innerHTML = `<th id="th-col-header">${isZh ? tpl.colHeaderZh : tpl.colHeaderEn}</th>`;
+      labels.forEach(l => {
+        headerRow.innerHTML += `<th>${l}</th>`;
+      });
+
+      tbody.innerHTML = `
+        <tr>
+          <td style="font-weight:bold; background:#edf2f7; color:#2b5278;">${isZh ? tpl.rowAZh : tpl.rowAEn}</td>
+          ${q.dataA.map(v => `<td>${v}</td>`).join('')}
+        </tr>
+        <tr>
+          <td style="font-weight:bold; background:#edf2f7; color:#2b5278;">${isZh ? tpl.rowBZh : tpl.rowBEn}</td>
+          ${q.dataB.map(v => `<td>${v}</td>`).join('')}
+        </tr>
+      `;
+
+      targetDataA = [...q.dataA];
+      targetDataB = [...q.dataB];
+      userPointsA = {};
+      userPointsB = {};
+      activeSeries = 'A';
+      selectActiveSeries('A');
+
+      currentGraphMeta = {
+        labels: labels,
+        stepVal: q.stepVal,
+        yMax: q.yMax,
+        yTitle: isZh ? tpl.valHeaderZh : tpl.valHeaderEn
+      };
+
+      renderInteractiveChart();
+    }
+
+    function handleNodeClick(colIdx, val) {
+      const targetStore = (activeSeries === 'A') ? userPointsA : userPointsB;
+      if (targetStore[colIdx] === val) {
+        delete targetStore[colIdx];
+      } else {
+        targetStore[colIdx] = val;
+      }
+      renderInteractiveChart();
+    }
+
+    function renderInteractiveChart() {
+      const svg = document.getElementById('create-chart');
+      svg.innerHTML = '';
+
+      const width = 500;
+      const height = 360;
+      const margin = { top: 35, right: 30, bottom: 60, left: 60 };
+      const chartW = width - margin.left - margin.right;
+      const chartH = height - margin.top - margin.bottom;
+
+      const { labels, stepVal, yMax, yTitle } = currentGraphMeta;
+
+      // 繪製 Y 軸標籤與網格線
+      const ySteps = yMax / stepVal; // 依小格計算，正確呈現大小格層次
+      const stepH = chartH / ySteps;
+
+      for (let i = 0; i <= ySteps; i++) {
+        const y = margin.top + chartH - i * stepH;
+        const val = i * stepVal;
+        const isMajorGrid = (i % 5 === 0); // 每 5 個小格為大格主網格線
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", margin.left);
+        line.setAttribute("y1", y);
+        line.setAttribute("x2", margin.left + chartW);
+        line.setAttribute("y2", y);
+
+        // 加深小格線與大格線，強化對比度
+        if (i === 0) {
+          line.setAttribute("stroke", "#2d3748");
+          line.setAttribute("stroke-width", "2.5");
+        } else if (isMajorGrid) {
+          line.setAttribute("stroke", "#4a5568");
+          line.setAttribute("stroke-width", "1.75");
+        } else {
+          line.setAttribute("stroke", "#a0aec0");
+          line.setAttribute("stroke-width", "1");
+        }
+        svg.appendChild(line);
+
+        // 僅在大格標記數字
+        if (isMajorGrid) {
+          const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          text.setAttribute("x", margin.left - 10);
+          text.setAttribute("y", y + 4);
+          text.setAttribute("text-anchor", "end");
+          text.setAttribute("font-size", "12");
+          text.setAttribute("fill", "#2d3748");
+          text.setAttribute("font-weight", "600");
+          text.textContent = Math.round(val);
+          svg.appendChild(text);
+        }
+      }
+
+      // 繪製 X 軸標籤與網格線
+      const numCols = labels.length;
+      const colW = chartW / (numCols - 1);
+
+      for (let i = 0; i < numCols; i++) {
+        const x = margin.left + i * colW;
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x);
+        line.setAttribute("y1", margin.top);
+        line.setAttribute("x2", x);
+        line.setAttribute("y2", margin.top + chartH);
+        line.setAttribute("stroke", "#4a5568");
+        line.setAttribute("stroke-width", "1.5");
+        svg.appendChild(line);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", x);
+        text.setAttribute("y", margin.top + chartH + 20);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("font-size", "12");
+        text.setAttribute("fill", "#2d3748");
+        text.setAttribute("font-weight", "600");
+        text.textContent = labels[i];
+        svg.appendChild(text);
+      }
+
+      // 繪製 Y 軸單位標題
+      const yTitleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      yTitleText.setAttribute("x", margin.left);
+      yTitleText.setAttribute("y", margin.top - 12);
+      yTitleText.setAttribute("text-anchor", "start");
+      yTitleText.setAttribute("font-size", "13");
+      yTitleText.setAttribute("font-weight", "bold");
+      yTitleText.setAttribute("fill", "#2b5278");
+      yTitleText.textContent = yTitle;
+      svg.appendChild(yTitleText);
+
+      // 繪製已標記的數據折線與節點 (Series A)
+      drawSeriesLinesAndPoints(svg, userPointsA, '#e76f51', margin, colW, stepH, stepVal, chartH);
+      // 繪製已標記的數據折線與節點 (Series B)
+      drawSeriesLinesAndPoints(svg, userPointsB, '#2a9d8f', margin, colW, stepH, stepVal, chartH);
+
+      // 繪製互動點擊區域 (Grid Nodes)
+      for (let c = 0; c < numCols; c++) {
+        const x = margin.left + c * colW;
+        for (let stepIdx = 0; stepIdx <= ySteps; stepIdx++) {
+          const val = stepIdx * stepVal;
+          const y = margin.top + chartH - stepIdx * stepH;
+
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          circle.setAttribute("cx", x);
+          circle.setAttribute("cy", y);
+          circle.setAttribute("r", "9");
+          circle.setAttribute("class", "grid-node");
+          circle.onclick = () => handleNodeClick(c, val);
+          svg.appendChild(circle);
+        }
+      }
+    }
+
+    function drawSeriesLinesAndPoints(svg, pointMap, color, margin, colW, stepH, stepVal, chartH) {
+      const keys = Object.keys(pointMap).map(Number).sort((a, b) => a - b);
+      if (keys.length > 1) {
+        for (let i = 0; i < keys.length - 1; i++) {
+          const c1 = keys[i];
+          const c2 = keys[i + 1];
+          if (c2 === c1 + 1) {
+            const x1 = margin.left + c1 * colW;
+            const y1 = margin.top + chartH - (pointMap[c1] / stepVal) * stepH;
+            const x2 = margin.left + c2 * colW;
+            const y2 = margin.top + chartH - (pointMap[c2] / stepVal) * stepH;
+
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1);
+            line.setAttribute("y1", y1);
+            line.setAttribute("x2", x2);
+            line.setAttribute("y2", y2);
+            line.setAttribute("stroke", color);
+            line.setAttribute("stroke-width", "3");
+            svg.appendChild(line);
+          }
+        }
+      }
+
+      keys.forEach(c => {
+        const x = margin.left + c * colW;
+        const y = margin.top + chartH - (pointMap[c] / stepVal) * stepH;
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", x);
+        circle.setAttribute("cy", y);
+        circle.setAttribute("r", "5");
+        circle.setAttribute("fill", color);
+        circle.setAttribute("stroke", "#ffffff");
+        circle.setAttribute("stroke-width", "2");
+        svg.appendChild(circle);
+      });
+    }
+
+    // --- 答案檢查與提交 ---
+    function checkAnswer() {
+      const q = questions[currentQIndex];
+      let isCorrect = false;
+      let userAnsSummary = "";
+      let detailMsg = "";
+
+      if (currentMode === 'rounding') {
+        let inputsCorrect = 0;
+        let emptyFound = false;
+        let wrongIndices = [];
+
+        for (let i = 0; i < 5; i++) {
+          const inputEl = document.getElementById(`r-input-a${i}`);
+          const rawVal = inputEl.value.trim().replace(/,/g, '');
+          if (rawVal === '') {
+            emptyFound = true;
+          }
+          const numVal = parseInt(rawVal, 10);
+          if (numVal === q.ansA[i]) {
+            inputsCorrect++;
+            inputEl.className = 'round-input correct';
+          } else {
+            wrongIndices.push(i);
+            inputEl.className = 'round-input wrong';
+          }
+        }
+
+        const fb = document.getElementById('feedback-area');
+        fb.classList.remove('hidden');
+
+        if (emptyFound) {
+          fb.className = 'feedback-box feedback-warning';
+          fb.innerHTML = i18n[currentLang].roundIncompleteMsg;
+          return;
+        }
+
+        if (inputsCorrect === 5) {
+          isCorrect = true;
+          fb.className = 'feedback-box feedback-success';
+          fb.innerHTML = i18n[currentLang].roundSuccessMsg;
+        } else {
+          isCorrect = false;
+          if (!q.attemptedOnce) {
+            q.attemptedOnce = true;
+            fb.className = 'feedback-box feedback-warning';
+            fb.innerHTML = i18n[currentLang].roundWrongHintHeader;
+            return;
+          } else {
+            fb.className = 'feedback-box feedback-danger';
+            let wrongDetail = i18n[currentLang].roundWrongHeader;
+            const tpl = i18n[currentLang].roundDetailTemplate;
+            wrongIndices.forEach(idx => {
+              const colName = (currentLang === 'zh') ? q.preset.colsZh[idx] : q.preset.colsEn[idx];
+              const formattedDetail = tpl
+                .replace('{col}', colName)
+                .replace('{orig}', q.preset.dataA[idx].toLocaleString())
+                .replace('{ans}', q.ansA[idx].toLocaleString());
+              wrongDetail += formattedDetail;
+            });
+            fb.innerHTML = wrongDetail;
+          }
+        }
+
+        userAnsSummary = (currentLang === 'zh') ? `${inputsCorrect} / 5 正確` : `${inputsCorrect} / 5 correct`;
+      } else {
+        // 單元二：複合折線圖驗證
+        const countA = Object.keys(userPointsA).length;
+        const countB = Object.keys(userPointsB).length;
+
+        const fb = document.getElementById('feedback-area');
+        fb.classList.remove('hidden');
+
+        if (countA < 6 || countB < 6) {
+          fb.className = 'feedback-box feedback-warning';
+          fb.innerHTML = i18n[currentLang].createIncompleteAdvMsg;
+          return;
+        }
+
+        let errors = [];
+        const tpl = i18n[currentLang].createDetailTemplate;
+        const seriesAName = (currentLang === 'zh') ? q.template.rowAZh : q.template.rowAEn;
+        const seriesBName = (currentLang === 'zh') ? q.template.rowBZh : q.template.rowBEn;
+        const labelsList = (currentLang === 'zh') ? q.template.labelsZh : q.template.labelsEn;
+
+        for (let i = 0; i < 6; i++) {
+          if (userPointsA[i] !== q.dataA[i]) {
+            const errStr = tpl
+              .replace('{series}', seriesAName)
+              .replace('{pt}', i + 1)
+              .replace('{label}', labelsList[i])
+              .replace('{marked}', userPointsA[i])
+              .replace('{correct}', q.dataA[i]);
+            errors.push(errStr);
+          }
+          if (userPointsB[i] !== q.dataB[i]) {
+            const errStr = tpl
+              .replace('{series}', seriesBName)
+              .replace('{pt}', i + 1)
+              .replace('{label}', labelsList[i])
+              .replace('{marked}', userPointsB[i])
+              .replace('{correct}', q.dataB[i]);
+            errors.push(errStr);
+          }
+        }
+
+        if (errors.length === 0) {
+          isCorrect = true;
+          fb.className = 'feedback-box feedback-success';
+          fb.innerHTML = i18n[currentLang].createSuccessMsg;
+        } else {
+          isCorrect = false;
+          fb.className = 'feedback-box feedback-danger';
+          fb.innerHTML = i18n[currentLang].createWrongHeader + errors.join('');
+        }
+
+        if (currentLang === 'zh') {
+          userAnsSummary = isCorrect ? "繪製完全正確" : `標記點不正確 (${12 - errors.length} / 12 正確)`;
+        } else {
+          userAnsSummary = isCorrect ? i18n.en.correctAllGraph : `Incorrect points (${12 - errors.length} / 12 correct)`;
+        }
+      }
+
+      records.push({
+        qIndex: currentQIndex + 1,
+        mode: currentMode,
+        isCorrect: isCorrect,
+        userAnsSummary: userAnsSummary,
+        questionLabel: (currentLang === 'zh') ? `第 ${currentQIndex + 1} 題` : `Q${currentQIndex + 1}`
+      });
+
+      document.getElementById('btn-submit').classList.add('hidden');
+      document.getElementById('btn-next').classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      currentQIndex++;
+      if (currentQIndex < questions.length) {
+        loadQuestion();
+      } else {
+        showReport();
+      }
+    }
+
+    // --- 分析報告與圖片下載 ---
+    function showReport() {
+      document.getElementById('page-quiz').classList.add('hidden');
+      document.getElementById('page-report').classList.remove('hidden');
+      document.getElementById('lang-toggle-btn').classList.remove('hidden');
+
+      const endTimeObj = new Date();
+      const formatTime = d => d.toTimeString().split(' ')[0];
+
+      document.getElementById('val-start-time').innerText = formatTime(startTimeObj);
+      document.getElementById('val-end-time').innerText = formatTime(endTimeObj);
+
+      const diffSec = Math.max(1, Math.floor((endTimeObj - startTimeObj) / 1000));
+      const mins = Math.floor(diffSec / 60);
+      const secs = diffSec % 60;
+      document.getElementById('val-duration').innerText = `${mins} 分 ${secs} 秒`;
+
+      const totalQ = records.length;
+      const correctQ = records.filter(r => r.isCorrect).length;
+      const accuracyPct = Math.round((correctQ / totalQ) * 100);
+
+      document.getElementById('val-correct-count').innerText = `${correctQ} / ${totalQ}`;
+      document.getElementById('val-accuracy').innerText = `${accuracyPct}%`;
+
+      document.getElementById('report-unit-name').innerText = (currentMode === 'rounding') ? i18n[currentLang].unit1Title : i18n[currentLang].unit2Title;
+      document.getElementById('val-unit-mastery').innerText = `${correctQ} / ${totalQ} (${accuracyPct}%)`;
+
+      const correctContainer = document.getElementById('correct-list-container');
+      const wrongContainer = document.getElementById('wrong-list-container');
+
+      correctContainer.innerHTML = '';
+      wrongContainer.innerHTML = '';
+
+      const correctRecords = records.filter(r => r.isCorrect);
+      const wrongRecords = records.filter(r => !r.isCorrect);
+
+      if (correctRecords.length === 0) {
+        correctContainer.innerHTML = `<div style="color:#718096; font-size:0.9rem;">${i18n[currentLang].noCorrect}</div>`;
+      } else {
+        correctRecords.forEach(r => {
+          correctContainer.innerHTML += `<div class="item-card-correct">✓ ${r.questionLabel}：${r.userAnsSummary}</div>`;
+        });
+      }
+
+      if (wrongRecords.length === 0) {
+        wrongContainer.innerHTML = `<div style="color:#38a169; font-weight:bold; font-size:0.95rem;">${i18n[currentLang].noWrong}</div>`;
+      } else {
+        wrongRecords.forEach(r => {
+          wrongContainer.innerHTML += `<div class="item-card-wrong">✕ ${r.questionLabel}：${r.userAnsSummary}</div>`;
+        });
+      }
+    }
+
+    function downloadReportImage() {
+      const card = document.getElementById('report-card-to-capture');
+      html2canvas(card, { scale: 2 }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `Math_Report_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    function retryPractice() {
+      startQuiz(currentMode);
+    }
+
+    function goHome() {
+      document.getElementById('page-report').classList.add('hidden');
+      document.getElementById('page-home').classList.remove('hidden');
+      document.getElementById('lang-toggle-btn').classList.remove('hidden');
+    }
+
+    function askReturnHome() {
+      if (!document.getElementById('page-quiz').classList.contains('hidden')) {
+        openModal(i18n[currentLang].modalReturnTitle, i18n[currentLang].modalReturnMsg, () => {
+          document.getElementById('page-quiz').classList.add('hidden');
+          document.getElementById('page-home').classList.remove('hidden');
+          document.getElementById('lang-toggle-btn').classList.remove('hidden');
+        });
+      }
+    }
+
+    function openModal(title, msg, onConfirm) {
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-msg').innerText = msg;
+      modalActionCallback = onConfirm;
+      document.getElementById('custom-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('custom-modal').classList.remove('active');
+    }
+
+    function confirmModalAction() {
+      closeModal();
+      if (modalActionCallback) modalActionCallback();
+    }
+  </script>
+  <script src="https://mathteacher1618.github.io/my_fixes/ipad_fix.js"></script>
+</body>
+</html>
